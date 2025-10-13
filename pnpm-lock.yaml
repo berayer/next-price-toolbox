@@ -77,9 +77,15 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      cmdk:
+        specifier: ^1.1.1
+        version: 1.1.1(@types/react-dom@19.2.1(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       dayjs:
         specifier: ^1.11.18
         version: 1.11.18
+      es-toolkit:
+        specifier: ^1.40.0
+        version: 1.40.0
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.1.0)
@@ -1093,6 +1099,12 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
+  cmdk@1.1.1:
+    resolution: {integrity: sha512-Vsv7kFaXm+ptHDMZ7izaRsP70GgrW9NBNGswt9OZaVBLlE0SNpDq8eu/VGXyF9r7M0azK3Wy7OlYXsuyYLFzHg==}
+    peerDependencies:
+      react: ^18 || ^19 || ^19.0.0-rc
+      react-dom: ^18 || ^19 || ^19.0.0-rc
+
   confbox@0.2.2:
     resolution: {integrity: sha512-1NB+BKqhtNipMsov4xI/NnhCKp9XG9NamYp5PVm9klAT0fsrNPjaFICsCFhNhwZJKNh7zB/3q8qXz0E9oaMNtQ==}
 
@@ -1187,6 +1199,9 @@ packages:
   enhanced-resolve@5.18.3:
     resolution: {integrity: sha512-d4lC8xfavMeBjzGr2vECC3fsGXziXZQyJxD868h2M/mBI3PwAuODxAkLkq5HYuvrPYcUtiLzsTo8U3PgX3Ocww==}
     engines: {node: '>=10.13.0'}
+
+  es-toolkit@1.40.0:
+    resolution: {integrity: sha512-8o6w0KFmU0CiIl0/Q/BCEOabF2IJaELM1T2PWj6e8KqzHv1gdx+7JtFnDwOx1kJH/isJ5NwlDG1nCr1HrRF94Q==}
 
   eventemitter3@4.0.7:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
@@ -2530,6 +2545,18 @@ snapshots:
 
   clsx@2.1.1: {}
 
+  cmdk@1.1.1(@types/react-dom@19.2.1(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.2.2)(react@19.1.0)
+      '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.1(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-id': 1.1.1(@types/react@19.2.2)(react@19.1.0)
+      '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.2.1(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+
   confbox@0.2.2: {}
 
   consola@3.4.2: {}
@@ -2606,6 +2633,8 @@ snapshots:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.3.0
+
+  es-toolkit@1.40.0: {}
 
   eventemitter3@4.0.7: {}
 

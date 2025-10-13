@@ -1,6 +1,7 @@
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/app-sidebar'
-import { SiteHeader } from '@/components/site-header'
+import { AppSidebar } from '@/components/custom/app-sidebar'
+import { SiteHeader } from '@/components/custom/site-header'
+import { Toaster } from '@/components/ui/sonner'
 
 export default function HomeLayout({
   children,
@@ -20,6 +21,7 @@ export default function HomeLayout({
         <SiteHeader />
         {children}
       </SidebarInset>
+      <Toaster richColors position="top-center" />
     </SidebarProvider>
   )
 }

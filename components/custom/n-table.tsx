@@ -110,7 +110,7 @@ export default function NTable<T>({ data, columns, children }: TableProps<T>) {
       </div>
 
       {/* 表格主体 */}
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
