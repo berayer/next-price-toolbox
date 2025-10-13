@@ -50,10 +50,6 @@ const navMenu: NavItem[] = [
         title: '花色',
         path: '/base-data/color',
       },
-      {
-        title: '测试',
-        path: '/base-data/test',
-      },
     ],
   },
   {

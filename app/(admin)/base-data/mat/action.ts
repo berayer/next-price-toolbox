@@ -1,9 +1,9 @@
 'use server'
 
-import { redirect } from 'next/navigation'
 import prisma from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
 
-export async function createPost(prevState: any, formData: FormData) {
+export async function createNewMat(_: any, formData: FormData) {
   // 模拟异步操作
   // await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -41,10 +41,27 @@ export async function createPost(prevState: any, formData: FormData) {
     },
   })
 
+  revalidatePath('/data-base/test')
+
   return {
     success: true,
   }
+}
 
-  // 重新加载页面
-  // redirect('/base-data/mat')
+export async function deleteMat(_: any, formData: FormData) {
+  // await new Promise((resolve) => setTimeout(resolve, 2000))
+
+  const id = Number(formData.get('id'))
+
+  if (isNaN(id)) {
+    return { error: 'ID无效' }
+  }
+
+  try {
+    await prisma.mat.delete({ where: { id } })
+    revalidatePath('/data-base/test')
+    return { success: true }
+  } catch (error) {
+    return { error: '删除失败' }
+  }
 }

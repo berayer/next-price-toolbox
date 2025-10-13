@@ -1,9 +1,9 @@
 'use server'
 
-import { redirect } from 'next/navigation'
 import prisma from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
 
-export async function createPost(prevState: any, formData: FormData) {
+export async function createColor(_: any, formData: FormData) {
   // 模拟异步操作
   // await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -33,10 +33,13 @@ export async function createPost(prevState: any, formData: FormData) {
   })
 
   // 重新加载页面
-  redirect('/base-data/color')
+  revalidatePath('/base-data/color')
+  return { success: true }
 }
 
-export async function deletePost(prevState: any, id: number) {
+export async function deleteColor(_: any, formData: FormData) {
+  const id = Number(formData.get('id'))
+
   await prisma.color.delete({
     where: {
       id: id,
@@ -44,5 +47,6 @@ export async function deletePost(prevState: any, id: number) {
   })
 
   // 重新加载页面
-  redirect('/base-data/color')
+  revalidatePath('/base-data/color')
+  return { success: true }
 }
