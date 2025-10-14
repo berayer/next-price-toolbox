@@ -44,15 +44,16 @@ model MatColor {
 }
 
 model MatColorPrice {
-  id          Int               @id @default(autoincrement())
-  matColor    MatColor          @relation(fields: [matColorId], references: [id])
-  matColorId  Int
-  priceType   MatColorPriceType @relation(fields: [priceTypeId], references: [id])
-  priceTypeId Int
-  price       Float
-  refId       Int?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id               Int                @id @default(autoincrement())
+  matColor         MatColor           @relation(fields: [matColorId], references: [id])
+  matColorId       Int
+  priceType        MatColorPriceType  @relation(fields: [priceTypeId], references: [id])
+  priceTypeId      Int
+  price            Float
+  refId            Int?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  MatColorPriceLog MatColorPriceLog[]
 }
 
 model MatColorPriceType {
@@ -61,4 +62,13 @@ model MatColorPriceType {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   MatColorPrice MatColorPrice[]
+}
+
+model MatColorPriceLog {
+  id              Int           @id @default(autoincrement())
+  matColorPrice   MatColorPrice @relation(fields: [matColorPriceId], references: [id])
+  matColorPriceId Int
+  oldPrice        Float         @default(0)
+  newPrice        Float
+  createdAt       DateTime      @default(now())
 }
