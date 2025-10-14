@@ -132,7 +132,7 @@ export function BoardTable({ mats, boardPrices, setBoardPrices }: BoardTableProp
             ))}
             {boardPrices.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="h-16 text-center">
+                <TableCell colSpan={8} className="h-16 text-center">
                   无数据
                 </TableCell>
               </TableRow>
