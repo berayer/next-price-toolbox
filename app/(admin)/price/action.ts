@@ -3,7 +3,8 @@
 import { Color } from '@/generated/prisma'
 import prisma from '@/lib/prisma'
 import { groupBy } from 'es-toolkit'
-import { createPriceRule, createRule, fnc, selectRuleByNameAndPrice, close, deletePriceRule } from '@/lib/imes'
+import { close, createPriceRule, deletePriceRule, selectRuleByNameAndPrice } from '@/lib/imes'
+import { ruleTemplate } from './priceRule'
 
 export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[]) {
   await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -23,7 +24,7 @@ export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[
 
       // 板材如果不存在创建新板材
       if (!matColor) {
-        console.log('创建新板材')
+        console.log('创建新板材', bp.mat.name, sc.fullName, bp.thick, bp.spec, bp.minDog)
         matColor = await prisma.matColor.create({
           data: {
             colorId: sc.id,
@@ -34,10 +35,10 @@ export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[
         })
       }
 
-      bp.p1 && (await updatePrice(1, matColor.id, bp.p1))
-      bp.p2 && (await updatePrice(2, matColor.id, bp.p2))
-      bp.p3 && (await updatePrice(3, matColor.id, bp.p3))
-      bp.p4 && (await updatePrice(4, matColor.id, bp.p4))
+      // 更新所有录入的价格
+      for (const [k, v] of bp.prices) {
+        await updatePrice(k, matColor.id, v)
+      }
     }
   }
 
@@ -118,9 +119,10 @@ async function genNewPrice() {
       return colors.find((c) => c.id === f.matColor.colorId)!
     })
 
-    const name = `${priceType.name}-${mat.name}-${thick}-${spec}`
+    // 厚度最少两位,不够前面补充0,方便对齐
+    const name = `${priceType.name}-${mat.name}-${thick.toString().padStart(2, '0')}-${spec}`
 
-    const ruleId = await selectRuleByNameAndPrice(188, name, price)
+    const ruleId = await selectRuleByNameAndPrice(priceType.ruleTypeId, name, price)
     // console.log('是否存在', ruleId)
     // 新增价格需要删除相同的规则
     if (ruleId) {
@@ -144,14 +146,14 @@ async function genNewPrice() {
     console.log(ruleId ? '更新' : '创建', name, price)
 
     const refId = await createPriceRule({
-      PriceSolutionId: 4,
+      PriceSolutionId: 23,
       Name: name,
-      PriceSolutionRuleTypeId: 188,
-      PriceMode: priceType.id == 2 ? '按表达式' : '按面积',
+      PriceSolutionRuleTypeId: priceType.ruleTypeId,
+      PriceMode: priceType.priceModel as any,
       Price: price,
-      Unit: priceType.id == 2 ? '米' : '平方',
-      MatchPriority: 100 + (spec > 2700 ? 10 : 0) + (priceType.id == 2 ? -50 : 0),
-      Expression: `${priceType.id == 2 ? EXP : ''}`,
+      Unit: priceType.unit as any,
+      MatchPriority: priceType.priority + (spec > 2700 ? 1 : 0),
+      Expression: priceType.expression ?? undefined,
     })
 
     // 将所有的RefId绑定到价格上
@@ -166,115 +168,21 @@ async function genNewPrice() {
       })
     }
 
-    const ruleInfo: Rule = {
+    // 特殊规则, 颗粒板的9厚度板件，基材叫免漆板，规则名称还是颗粒板
+    const matName = mat.code == '2' && thick == 9 ? '免漆板' : mat.name
+
+    const ruleInfo = {
       spec,
       thick,
-      mat: mat.name,
+      mat: matName,
       price,
     }
 
-    switch (priceType.id) {
-      case 1:
-        await rule1(refId, ruleInfo, cls)
-        break
-      case 2:
-        await rule2(refId, ruleInfo, cls)
-        break
-      case 3:
-        await rule3(refId, ruleInfo, cls)
-        break
-      case 4:
-        await rule4(refId, ruleInfo, cls)
-        break
-      default:
-        console.log('未知的规则类型')
-        break
+    // 根据规则模板插入SearchFilter规则
+    if (ruleTemplate[priceType.id]) {
+      await ruleTemplate[priceType.id](refId, ruleInfo, cls)
+    } else {
+      console.error('未定义的报价类型', priceType.id)
     }
-  }
-}
-
-const EXP = `if (@宽度>@长度)
-
-  set @报价量=@宽度/1000.0
-else
-  set @报价量=@长度/1000.0`
-
-interface Rule {
-  spec: number
-  thick: number
-  mat: string
-  price: number
-}
-
-/** 平方 */
-async function rule1(ruleId: number, rule: Rule, colors: Color[]) {
-  const topGroup = await createRule('并且', ruleId)
-  await topGroup.rule(fnc('厚', '等于', rule.thick))
-  await topGroup.rule(fnc('基材', '等于', rule.mat))
-  await topGroup.rule(fnc('长', '小于等于', rule.spec - 30))
-
-  const group1 = await topGroup.group('或者')
-  await group1.rule(fnc('分类', '前包含', 'GT'))
-  await group1.rule(fnc('分类', '前包含', 'YM_XB_CG'))
-
-  const group2 = await topGroup.group('或者')
-  for (const color of colors) {
-    await group2.rule(fnc('花色', '等于', color.fullName))
-  }
-}
-
-/** 延米 */
-async function rule2(ruleId: number, rule: Rule, colors: Color[]) {
-  const topGroup = await createRule('并且', ruleId)
-  await topGroup.rule(fnc('厚', '等于', rule.thick))
-  await topGroup.rule(fnc('基材', '等于', rule.mat))
-  await topGroup.rule(fnc('长', '小于等于', rule.spec - 30))
-
-  const group1 = await topGroup.group('或者')
-  await group1.rule(fnc('分类', '前包含', 'GT'))
-
-  const group3 = await topGroup.group('或者')
-  await group3.rule(fnc('长', '小于等于', 70))
-  await group3.rule(fnc('宽', '小于等于', 70))
-
-  const group2 = await topGroup.group('或者')
-  for (const color of colors) {
-    await group2.rule(fnc('花色', '等于', color.fullName))
-  }
-}
-
-/** 门抽 */
-async function rule3(ruleId: number, rule: Rule, colors: Color[]) {
-  const topGroup = await createRule('并且', ruleId)
-  await topGroup.rule(fnc('厚', '等于', rule.thick))
-  await topGroup.rule(fnc('基材', '等于', rule.mat))
-  await topGroup.rule(fnc('长', '小于等于', rule.spec - 30))
-
-  const group1 = await topGroup.group('或者')
-  await group1.rule(fnc('分类', '等于', 'KM_D_PBM'))
-  await group1.rule(fnc('分类', '前包含', 'KM_D_X22'))
-  await group1.rule(fnc('名称', '包含', 'KM56'))
-  await group1.rule(fnc('名称', '包含', 'KMC56'))
-
-  const group2 = await topGroup.group('或者')
-  for (const color of colors) {
-    await group2.rule(fnc('花色', '等于', color.fullName))
-  }
-}
-
-/** 护墙 */
-async function rule4(ruleId: number, rule: Rule, colors: Color[]) {
-  const topGroup = await createRule('并且', ruleId)
-  await topGroup.rule(fnc('厚', '等于', rule.thick))
-  await topGroup.rule(fnc('基材', '等于', rule.mat))
-  await topGroup.rule(fnc('长', '小于等于', rule.spec - 30))
-
-  const group1 = await topGroup.group('或者')
-  await group1.rule(fnc('编码', '等于', 'HQ_Bao'))
-  await group1.rule(fnc('编码', '等于', 'HQ_Hou'))
-
-  const group2 = await topGroup.group('或者')
-  for (const color of colors) {
-    await group2.rule(fnc('花色', '等于', color.fullName))
   }
 }

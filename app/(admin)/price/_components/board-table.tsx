@@ -3,38 +3,87 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import type { Mat } from '@/generated/prisma'
-import { useState, useRef } from 'react'
+import { useRef } from 'react'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { sortBy } from 'es-toolkit'
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface BoardTableProps {
   mats: Mat[]
   boardPrices: BoardTableData[]
   setBoardPrices: (boardPrices: BoardTableData[]) => void
+  setCurBoard: (curBoard: BoardTableData | null) => void
 }
 
-export function BoardTable({ mats, boardPrices, setBoardPrices }: BoardTableProps) {
+const columnHelper = createColumnHelper<BoardTableData>()
+
+export function BoardTable({ mats, boardPrices, setBoardPrices, setCurBoard }: BoardTableProps) {
   const mat = useRef<Mat | null>(null)
   const specRef = useRef<HTMLInputElement | null>(null)
   const thickRef = useRef<HTMLInputElement | null>(null)
+  const minDogRef = useRef<HTMLInputElement | null>(null)
 
-  const sortBoardPrices = sortBy(boardPrices, ['spec', 'thick'])
+  const columns = [
+    columnHelper.display({
+      id: 'selected',
+      size: 35,
+      cell: ({ row }) => <Checkbox checked={row.getIsSelected()} aria-readonly />,
+    }),
+    columnHelper.accessor('mat.name', { header: '基材' }),
+    columnHelper.accessor('thick', { header: '厚度' }),
+    columnHelper.accessor('spec', { header: '规格' }),
+    columnHelper.accessor('minDog', { header: '最小计价量' }),
+    columnHelper.display({
+      id: 'action',
+      header: '操作',
+      cell: ({ row }) => (
+        <Button
+          variant="link"
+          className="text-destructive h-6"
+          onClick={(e) => {
+            e.stopPropagation()
+            // 如果当前行已经被选中,则删除当前行
+            row.getIsSelected() && setCurBoard(null)
+            setBoardPrices(boardPrices.filter((item) => item.id !== row.original.id))
+          }}
+        >
+          删除
+        </Button>
+      ),
+    }),
+  ]
+
+  const table = useReactTable({
+    data: boardPrices,
+    columns,
+    // 索引ID, 不要使用index
+    getRowId: (row) => row.id,
+    enableRowSelection: true,
+    enableMultiRowSelection: false,
+    getCoreRowModel: getCoreRowModel(),
+    // onRowSelectionChange: setRowSelection,
+  })
 
   function handleAddBoard() {
     if (mat.current && thickRef.current?.value && specRef.current?.value) {
-      const key = mat.current.code + thickRef.current.value + specRef.current.value
+      // 解决厚度为09的问题
+      const thick = Number(thickRef.current.value)
+      const key = mat.current.code + thick + specRef.current.value + minDogRef.current?.value
       if (boardPrices.some((it) => it.id === key)) {
         toast.error('已存在该板件!!!')
         return
       }
+      // console.log(minDogRef.current?.value)
       setBoardPrices([
         ...boardPrices,
         {
           id: key,
           mat: mat.current,
-          thick: thickRef.current.value,
+          thick: thick.toString(),
           spec: specRef.current.value,
+          minDog: minDogRef.current?.value,
+          prices: new Map<number, number>(),
         },
       ])
     } else {
@@ -43,11 +92,11 @@ export function BoardTable({ mats, boardPrices, setBoardPrices }: BoardTableProp
   }
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <div className="flex gap-2">
+    <div className="flex w-[600px] flex-col gap-2">
+      <form className="flex items-center gap-2">
         <Label>基材</Label>
         <Select onValueChange={(value) => (mat.current = mats.find((it) => it.id === Number(value)) || null)}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-[100px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -61,78 +110,73 @@ export function BoardTable({ mats, boardPrices, setBoardPrices }: BoardTableProp
           </SelectContent>
         </Select>
         <Label>厚度</Label>
-        <Input ref={thickRef} className="w-auto" spellCheck={false} autoComplete="off" />
+        <Input
+          ref={thickRef}
+          type="number"
+          min={3}
+          max={100}
+          className="w-16"
+          spellCheck={false}
+          autoComplete="off"
+          required
+        />
         <Label>规格</Label>
-        <Input ref={specRef} className="w-auto" spellCheck={false} autoComplete="off" />
-        <Button onClick={handleAddBoard}>添加</Button>
-      </div>
-      <div className="overflow-hidden rounded-md border">
+        <Input
+          ref={specRef}
+          type="number"
+          className="w-16"
+          min={2400}
+          max={2800}
+          spellCheck={false}
+          autoComplete="off"
+          required
+        />
+        <Label>最小计价量</Label>
+        <Input
+          ref={minDogRef}
+          type="number"
+          min={0}
+          max={3}
+          step={0.001}
+          className="w-16"
+          spellCheck={false}
+          autoComplete="off"
+        />
+        <Button formAction={handleAddBoard}>添加</Button>
+      </form>
+      <div className="overflow-hidden border">
         <Table>
-          <TableHeader className="bg-muted sticky top-0">
-            <TableRow>
-              <TableHead>基材</TableHead>
-              <TableHead>规格</TableHead>
-              <TableHead>厚度</TableHead>
-              <TableHead className="text-center">柜身</TableHead>
-              <TableHead className="text-center">延米</TableHead>
-              <TableHead className="text-center">门抽</TableHead>
-              <TableHead className="text-center">护墙</TableHead>
-              <TableHead>操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortBoardPrices.map((it) => (
-              <TableRow key={it.id}>
-                <TableCell className="py-0">{it.mat.name}</TableCell>
-                <TableCell className="py-0">{it.spec}</TableCell>
-                <TableCell className="py-0">{it.thick}</TableCell>
-
-                <TableCell className="w-[100px] py-0">
-                  <Input
-                    type="number"
-                    className="h-6 rounded-none border-none text-center shadow-none"
-                    onChange={(e) => (it.p1 = Number(e.target.value))}
-                  />
-                </TableCell>
-                <TableCell className="w-[100px] py-0">
-                  <Input
-                    type="number"
-                    className="h-6 rounded-none border-none text-center shadow-none"
-                    onChange={(e) => (it.p2 = Number(e.target.value))}
-                  />
-                </TableCell>
-                <TableCell className="w-[100px] py-0">
-                  <Input
-                    type="number"
-                    className="h-6 rounded-none border-none text-center shadow-none"
-                    onChange={(e) => (it.p3 = Number(e.target.value))}
-                  />
-                </TableCell>
-                <TableCell className="w-[100px] py-0">
-                  <Input
-                    type="number"
-                    className="h-6 rounded-none border-none text-center shadow-none"
-                    onChange={(e) => (it.p4 = Number(e.target.value))}
-                  />
-                </TableCell>
-
-                <TableCell className="py-0">
-                  <Button
-                    variant="link"
-                    className="text-destructive"
-                    size="sm"
-                    onClick={() => {
-                      setBoardPrices(boardPrices.filter((color) => color.id !== it.id))
-                    }}
-                  >
-                    删除
-                  </Button>
-                </TableCell>
+          <TableHeader className="bg-muted">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} style={{ width: header.getSize() }}>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
-            {boardPrices.length === 0 && (
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                  onClick={() => {
+                    row.toggleSelected(true)
+                    setCurBoard(row.original)
+                    // console.log(row.original)
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
-                <TableCell colSpan={8} className="h-16 text-center">
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   无数据
                 </TableCell>
               </TableRow>

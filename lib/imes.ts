@@ -380,30 +380,3 @@ async function deletePriceRule(ruleId: number) {
 }
 
 export { createPriceRule, createRule, fnc, close, selectRuleByNameAndPrice, deletePriceRule }
-
-/* Example
-async function main() {
-  const ruleId = await createPriceRule({
-    // 报价方案ID
-    PriceSolutionId: 15,
-    // 分类目录ID
-    PriceSolutionRuleTypeId: 154,
-    Name: '平板门-颗粒板',
-    Unit: '平方',
-    PriceMode: '按面积',
-    Price: 120
-  })
-
-  const topGroup = await createRule('并且', ruleId)
-  await topGroup.rule(fnc('名称', '等于', '平板门'))
-  await topGroup.rule(fnc('厚', '等于', 18))
-  await topGroup.rule(fnc('计料分类', '等于', '柜身'))
-
-  const group1 = await topGroup.group('或者')
-  await group1.rule(fnc('花色', '等于', '暖白801'))
-
-  const group2 = await group1.group('并且')
-  await group2.rule(fnc('信息3', '包含', '纯色'))
-  await group2.rule(fnc('分类', '前包含', 'KM_D_CG'))
-}
-*/

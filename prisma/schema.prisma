@@ -59,6 +59,12 @@ model MatColorPrice {
 model MatColorPriceType {
   id            Int             @id @default(autoincrement())
   name          String
+  remark        String?
+  priceModel    String          @default("按面积")
+  unit          String          @default("平方")
+  expression    String?
+  priority      Int             @default(100)
+  ruleTypeId    Int             @default(0)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   MatColorPrice MatColorPrice[]

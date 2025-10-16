@@ -75,23 +75,23 @@ export function ColorSelect({ colors, selectColors, setSelectedColor }: ColorSel
         </Button>
       </div>
       {/* 选择花色展示表格 */}
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-hidden border">
         <Table>
           <TableHeader className="bg-muted sticky top-0">
             <TableRow>
-              <TableHead>序号</TableHead>
-              <TableHead>编码</TableHead>
-              <TableHead>名称</TableHead>
-              <TableHead>操作</TableHead>
+              <TableHead className="h-8 text-center">#</TableHead>
+              <TableHead className="h-8 border-l">编码</TableHead>
+              <TableHead className="h-8 border-l">名称</TableHead>
+              <TableHead className="h-8 border-l">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {selectColors.map((it, idx) => (
               <TableRow key={it.id}>
-                <TableCell className="py-0">{idx + 1}</TableCell>
-                <TableCell className="py-0">{it.code}</TableCell>
-                <TableCell className="py-0">{it.name}</TableCell>
-                <TableCell className="py-0">
+                <TableCell className="py-0 text-center">{idx + 1}</TableCell>
+                <TableCell className="border-l py-0">{it.code}</TableCell>
+                <TableCell className="border-l py-0">{it.name}</TableCell>
+                <TableCell className="border-l py-0">
                   <Button
                     variant="link"
                     className="text-destructive"
@@ -108,7 +108,7 @@ export function ColorSelect({ colors, selectColors, setSelectedColor }: ColorSel
             {selectColors.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} className="h-16 text-center">
-                  无数据
+                  暂无数据
                 </TableCell>
               </TableRow>
             )}
