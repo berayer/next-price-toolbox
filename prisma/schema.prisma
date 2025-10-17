@@ -38,6 +38,7 @@ model MatColor {
   colorId       Int
   spec          Int
   thick         Int
+  minDog        Float?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   MatColorPrice MatColorPrice[]

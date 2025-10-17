@@ -19,6 +19,7 @@ export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[
           matId: bp.mat.id,
           spec: Number(bp.spec),
           thick: Number(bp.thick),
+          minDog: bp.minDog ? Number(bp.minDog) : null,
         },
       })
 
@@ -31,6 +32,7 @@ export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[
             matId: bp.mat.id,
             spec: Number(bp.spec),
             thick: Number(bp.thick),
+            minDog: bp.minDog ? Number(bp.minDog) : undefined,
           },
         })
       }
@@ -101,9 +103,10 @@ async function genNewPrice() {
 
   const result = groupBy(
     pce,
-    (it) => `${it.matColor.matId}:${it.matColor.thick}:${it.matColor.thick}:${it.priceTypeId}:${it.price}`,
+    (it) =>
+      `${it.matColor.matId}:${it.matColor.thick}:${it.matColor.spec}:${it.priceTypeId}:${it.price}:${it.matColor.minDog}`,
   )
-  console.log(Object.keys(result).length)
+  // console.log(Object.keys(result).length)
 
   const mats = await prisma.mat.findMany()
   const colors = await prisma.color.findMany()

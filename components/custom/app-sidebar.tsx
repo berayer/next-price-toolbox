@@ -28,7 +28,7 @@ type NavItem = {
 
 const navMenu: NavItem[] = [
   {
-    title: '仪表盘',
+    title: '板材价格',
     path: '/',
     icon: CircleGaugeIcon,
   },
