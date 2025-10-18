@@ -6,9 +6,7 @@ import { groupBy } from 'es-toolkit'
 import { close, createPriceRule, deletePriceRule, selectRuleByNameAndPrice } from '@/lib/imes'
 import { ruleTemplate } from './priceRule'
 
-export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[]) {
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-
+export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[], attIds: number[]) {
   for (const bp of boardPrices) {
     for (const sc of colors) {
       // 检测板材是否存在
@@ -39,7 +37,12 @@ export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[
 
       // 更新所有录入的价格
       for (const [k, v] of bp.prices) {
-        await updatePrice(k, matColor.id, v)
+        await updatePrice({
+          priceTypeId: k,
+          matColorId: matColor.id,
+          price: v,
+          ids: attIds,
+        })
       }
     }
   }
@@ -47,50 +50,69 @@ export async function saveNewPrice(colors: Color[], boardPrices: BoardTableData[
   await genNewPrice().finally(() => close())
 }
 
-async function updatePrice(priceTypeId: number, matColorId: number, price: number) {
-  const oldPrice = await prisma.matColorPrice.findFirst({
+async function updatePrice({
+  matColorId,
+  priceTypeId,
+  price,
+  ids,
+}: {
+  priceTypeId: number
+  matColorId: number
+  price: number
+  ids: number[]
+}) {
+  // TODO 有最小计价量的时候可能有问题
+  let curPrice = await prisma.matColorPrice.findFirst({
     where: {
       matColorId,
       priceTypeId,
     },
   })
 
-  if (!oldPrice) {
-    await prisma.matColorPrice.create({
+  if (!curPrice) {
+    curPrice = await prisma.matColorPrice.create({
       data: {
         matColorId,
         priceTypeId,
         price,
       },
     })
-  } else {
-    if (oldPrice.price === price) return
+    await recordPriceVersionAndAttachment(curPrice.id, price, ids)
+    return
+  }
 
-    await prisma.matColorPrice.update({
+  // 价格一样直接返回
+  if (curPrice.price == price) return
+
+  await prisma.matColorPrice.update({
+    where: {
+      id: curPrice.id,
+    },
+    data: {
+      price,
+    },
+  })
+
+  await recordPriceVersionAndAttachment(curPrice.id, price, ids)
+
+  if (curPrice.refId) {
+    await prisma.matColorPrice.updateMany({
       where: {
-        id: oldPrice.id,
+        refId: curPrice.refId,
       },
       data: {
-        price,
+        refId: null,
       },
     })
-    // 将所有的旧refId删除
-    if (oldPrice.refId) {
-      await prisma.matColorPrice.updateMany({
-        where: {
-          refId: oldPrice.refId,
-        },
-        data: {
-          refId: null,
-        },
-      })
-      // 修改价格需要删除旧的规则
-      await deletePriceRule(oldPrice.refId)
-      console.log('删除旧的规则', oldPrice.refId)
-    }
+    // 修改价格需要删除旧的规则
+    await deletePriceRule(curPrice.refId)
+    console.log('删除旧的规则', curPrice.refId)
   }
 }
 
+/**
+ * 根据本地sqlite数据库数据，生成IMES报价规则
+ */
 async function genNewPrice() {
   const pce = await prisma.matColorPrice.findMany({
     where: {
@@ -188,4 +210,20 @@ async function genNewPrice() {
       console.error('未定义的报价类型', priceType.id)
     }
   }
+}
+
+/**
+ * 记录价格的历史版本和当前版本的附件
+ */
+async function recordPriceVersionAndAttachment(matColorPriceId: number, price: number, attachment: number[]) {
+  const record = await prisma.priceVersion.create({
+    data: {
+      matColorPriceId,
+      price,
+    },
+  })
+  const data = attachment.map((id) => ({ priceVersionId: record.id, attachmentId: id }))
+  await prisma.priceAttachment.createMany({
+    data,
+  })
 }

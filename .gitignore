@@ -49,5 +49,8 @@ yarn-error.log*
 
 # db
 /prisma/dev.db
+/prisma/seed.ts
 
 .idea
+
+/attachment

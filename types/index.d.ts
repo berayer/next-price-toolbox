@@ -6,3 +6,8 @@ interface BoardTableData {
   minDog?: string
   prices: Map<number, number>
 }
+
+interface IdNameType {
+  id: number
+  name: string
+}

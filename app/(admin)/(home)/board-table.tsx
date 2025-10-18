@@ -1,7 +1,7 @@
 'use client'
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { MatColor, Mat, Color } from '@/generated/prisma'
+import type { Color, Mat, MatColor } from '@/generated/prisma'
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { formatDate } from '@/lib/utils'
 import { startTransition, useActionState, useEffect } from 'react'
@@ -27,9 +27,7 @@ const columns = [
 export default function BoardTable({ data }: BoardTableProps) {
   const [state, invokeAction, _] = useActionState(getBoardPriceById, null)
 
-  useEffect(() => {
-    console.log(state)
-  }, [state])
+  useEffect(() => {}, [state])
 
   const table = useReactTable({
     data,

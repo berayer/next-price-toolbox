@@ -45,16 +45,16 @@ model MatColor {
 }
 
 model MatColorPrice {
-  id               Int                @id @default(autoincrement())
-  matColor         MatColor           @relation(fields: [matColorId], references: [id])
-  matColorId       Int
-  priceType        MatColorPriceType  @relation(fields: [priceTypeId], references: [id])
-  priceTypeId      Int
-  price            Float
-  refId            Int?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  MatColorPriceLog MatColorPriceLog[]
+  id           Int               @id @default(autoincrement())
+  matColor     MatColor          @relation(fields: [matColorId], references: [id])
+  matColorId   Int
+  priceType    MatColorPriceType @relation(fields: [priceTypeId], references: [id])
+  priceTypeId  Int
+  price        Float
+  refId        Int?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  PriceVersion PriceVersion[]
 }
 
 model MatColorPriceType {
@@ -71,11 +71,30 @@ model MatColorPriceType {
   MatColorPrice MatColorPrice[]
 }
 
-model MatColorPriceLog {
-  id              Int           @id @default(autoincrement())
-  matColorPrice   MatColorPrice @relation(fields: [matColorPriceId], references: [id])
+model PriceVersion {
+  id              Int               @id @default(autoincrement())
+  matColorPrice   MatColorPrice     @relation(fields: [matColorPriceId], references: [id])
   matColorPriceId Int
-  oldPrice        Float         @default(0)
-  newPrice        Float
-  createdAt       DateTime      @default(now())
+  price           Float
+  createdAt       DateTime          @default(now())
+  PriceAttachment PriceAttachment[]
+}
+
+model Attachment {
+  id              Int               @id @default(autoincrement())
+  hash            String            @unique
+  fileName        String
+  fileSize        Int
+  fileType        String
+  url             String
+  createdAt       DateTime          @default(now())
+  PriceAttachment PriceAttachment[]
+}
+
+model PriceAttachment {
+  id             Int          @id @default(autoincrement())
+  priceVersion   PriceVersion @relation(fields: [priceVersionId], references: [id])
+  priceVersionId Int
+  attachment     Attachment   @relation(fields: [attachmentId], references: [id])
+  attachmentId   Int
 }
